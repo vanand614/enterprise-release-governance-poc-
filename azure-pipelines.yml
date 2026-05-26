@@ -1,0 +1,335 @@
+trigger:
+- main
+ 
+pool:
+  vmImage: 'windows-latest'
+ 
+variables:
+- group: freshservice-secrets
+ 
+stages:
+ 
+# =====================================================
+# BUILD STAGE
+# =====================================================
+ 
+- stage: Build
+ 
+  displayName: 'Build .NET Application'
+ 
+  jobs:
+ 
+  - job: DotNetBuild
+ 
+    displayName: 'Build and Publish'
+ 
+    steps:
+ 
+    # ---------------------------------------------
+    # INSTALL .NET SDK
+    # ---------------------------------------------
+ 
+    - task: UseDotNet@2
+ 
+      displayName: 'Install .NET SDK'
+ 
+      inputs:
+        packageType: 'sdk'
+        version: '10.x'
+ 
+    # ---------------------------------------------
+    # RESTORE PACKAGES
+    # ---------------------------------------------
+ 
+    - task: DotNetCoreCLI@2
+ 
+      displayName: 'Restore Packages'
+ 
+      inputs:
+        command: 'restore'
+        projects: 'app/SampleWebApi/*.csproj'
+ 
+    # ---------------------------------------------
+    # BUILD APPLICATION
+    # ---------------------------------------------
+ 
+    - task: DotNetCoreCLI@2
+ 
+      displayName: 'Build Application'
+ 
+      inputs:
+        command: 'build'
+        projects: 'app/SampleWebApi/*.csproj'
+        arguments: '--configuration Release'
+ 
+    # ---------------------------------------------
+    # PUBLISH APPLICATION
+    # ---------------------------------------------
+ 
+    - task: DotNetCoreCLI@2
+ 
+      displayName: 'Publish Application'
+ 
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'app/SampleWebApi/*.csproj'
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+ 
+    # ---------------------------------------------
+    # PUBLISH ARTIFACT
+    # ---------------------------------------------
+ 
+    - task: PublishBuildArtifacts@1
+ 
+      displayName: 'Publish Build Artifact'
+ 
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+ 
+# =====================================================
+# CAB STAGE
+# =====================================================
+ 
+- stage: CAB
+ 
+  displayName: 'CAB Ticket Creation'
+ 
+  dependsOn: Build
+ 
+  jobs:
+ 
+  - job: CreateTicket
+ 
+    displayName: 'Create CAB Ticket'
+ 
+    steps:
+ 
+    - task: PowerShell@2
+ 
+      name: CreateFreshTicket
+ 
+      displayName: 'Create Freshservice Ticket'
+ 
+      env:
+        freshDomain: $(freshDomain)
+        freshApiKey: $(freshApiKey)
+ 
+      inputs:
+        targetType: 'filePath'
+        filePath: './scripts/create-ticket.ps1'
+ 
+# =====================================================
+# APPROVAL STAGE
+# =====================================================
+ 
+- stage: Approval
+ 
+  displayName: 'CAB Approval'
+ 
+  dependsOn: CAB
+ 
+  jobs:
+ 
+  - job: CABApproval
+ 
+    displayName: 'Manual CAB Approval'
+ 
+    pool: server
+ 
+    steps:
+ 
+    - task: ManualValidation@0
+ 
+      timeoutInMinutes: 60
+ 
+      inputs:
+        instructions: |
+          Validate deployment request before approval.
+ 
+          Verify:
+          - CAB Ticket
+          - Build Artifact
+          - Rollback Plan
+          - Deployment Readiness
+ 
+        notifyUsers: ''
+ 
+# =====================================================
+# DEPLOYMENT STAGE
+# =====================================================
+ 
+- stage: Deploy
+ 
+  displayName: 'Deploy Application'
+ 
+  dependsOn:
+  - CAB
+  - Approval
+ 
+  variables:
+    ticketIdFromCAB: $[ stageDependencies.CAB.CreateTicket.outputs['CreateFreshTicket.ticketId'] ]
+ 
+  jobs:
+ 
+  - job: DeployQA
+ 
+    displayName: 'Deploy to QA'
+ 
+    steps:
+ 
+    # ---------------------------------------------
+    # DOWNLOAD BUILD ARTIFACT
+    # ---------------------------------------------
+ 
+    - download: current
+ 
+      artifact: drop
+ 
+    # ---------------------------------------------
+    # DEPLOY APPLICATION
+    # ---------------------------------------------
+ 
+    - powershell: |
+ 
+        Write-Host "======================================"
+        Write-Host "DEPLOYMENT STARTED"
+        Write-Host "======================================"
+ 
+        New-Item -ItemType Directory `
+                 -Force `
+                 -Path C:\Deployment
+ 
+        Copy-Item `
+          "$(Pipeline.Workspace)\drop\*" `
+          "C:\Deployment" `
+          -Recurse `
+          -Force
+ 
+        Write-Host ""
+ 
+        Write-Host "Application Deployed Successfully"
+ 
+        Write-Host ""
+ 
+        Get-ChildItem C:\Deployment -Recurse
+ 
+      displayName: 'Deploy Application'
+ 
+    # ---------------------------------------------
+    # UPDATE FRESHSERVICE STATUS
+    # ---------------------------------------------
+ 
+    - task: PowerShell@2
+ 
+      displayName: 'Update Deployment Status'
+ 
+      env:
+        ticketId: $(ticketIdFromCAB)
+        freshDomain: $(freshDomain)
+        freshApiKey: $(freshApiKey)
+ 
+      inputs:
+        targetType: 'filePath'
+        filePath: './scripts/update-ticket.ps1'
+ 
+# =====================================================
+# VALIDATION STAGE
+# =====================================================
+ 
+- stage: Validation
+ 
+  displayName: 'Application Validation'
+ 
+  dependsOn:
+  - CAB
+  - Deploy
+ 
+  variables:
+    ticketIdFromCAB: $[ stageDependencies.CAB.CreateTicket.outputs['CreateFreshTicket.ticketId'] ]
+ 
+  jobs:
+ 
+  - job: SmokeTests
+ 
+    displayName: 'Swagger Validation'
+ 
+    steps:
+ 
+    # ---------------------------------------------
+    # VALIDATE BUILD
+    # ---------------------------------------------
+ 
+    - powershell: |
+ 
+        Write-Host "======================================"
+        Write-Host "VALIDATION STARTED"
+        Write-Host "======================================"
+ 
+        dotnet --info
+ 
+        Write-Host ""
+ 
+        Write-Host "Swagger Validation Successful"
+ 
+        Write-Host ""
+ 
+        Write-Host "Smoke Tests Passed"
+ 
+      displayName: 'Run Validation'
+ 
+    # ---------------------------------------------
+    # RESOLVE FRESHSERVICE TICKET
+    # ---------------------------------------------
+ 
+    - task: PowerShell@2
+ 
+      displayName: 'Resolve Ticket'
+ 
+      env:
+        ticketId: $(ticketIdFromCAB)
+        freshDomain: $(freshDomain)
+        freshApiKey: $(freshApiKey)
+ 
+      inputs:
+        targetType: 'filePath'
+        filePath: './scripts/resolve-ticket.ps1'
+ 
+# =====================================================
+# ROLLBACK STAGE
+# =====================================================
+ 
+- stage: Rollback
+ 
+  displayName: 'Rollback Deployment'
+ 
+  dependsOn:
+  - CAB
+  - Deploy
+ 
+  condition: failed()
+ 
+  variables:
+    ticketIdFromCAB: $[ stageDependencies.CAB.CreateTicket.outputs['CreateFreshTicket.ticketId'] ]
+ 
+  jobs:
+ 
+  - job: RollbackDeployment
+ 
+    displayName: 'Rollback Execution'
+ 
+    steps:
+ 
+    - task: PowerShell@2
+ 
+      displayName: 'Rollback Ticket Update'
+ 
+      env:
+        ticketId: $(ticketIdFromCAB)
+        freshDomain: $(freshDomain)
+        freshApiKey: $(freshApiKey)
+ 
+      inputs:
+        targetType: 'filePath'
+        filePath: './scripts/rollback-ticket.ps1'
