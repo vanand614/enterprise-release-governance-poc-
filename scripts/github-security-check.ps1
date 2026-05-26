@@ -1,6 +1,12 @@
 $githubToken = $env:githubToken
 $repoOwner = $env:githubOwner
 $repoName = $env:githubRepo
+Write-Host ""
+Write-Host "GitHub Owner: $repoOwner"
+ 
+Write-Host "GitHub Repo: $repoName"
+ 
+Write-Host "GitHub Token Exists: $($githubToken -ne $null)"
  
 $headers = @{
 
