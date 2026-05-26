@@ -87,7 +87,36 @@ stages:
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
+# =====================================================
+# SECURITY VALIDATION STAGE
+# =====================================================
  
+- stage: SecurityValidation
+ 
+  displayName: 'GitHub Security Validation'
+ 
+  dependsOn: Build
+ 
+  jobs:
+ 
+  - job: GitHubSecurityChecks
+ 
+    displayName: 'Validate GitHub Security'
+ 
+    steps:
+ 
+    - task: PowerShell@2
+ 
+      displayName: 'Validate GitHub Security Alerts'
+ 
+      env:
+        githubToken: $(githubToken)
+        githubOwner: $(githubOwner)
+        githubRepo: $(githubRepo)
+ 
+      inputs:
+        targetType: 'filePath'
+        filePath: './scripts/github-security-check.ps1'
 # =====================================================
 # CAB STAGE
 # =====================================================
@@ -96,7 +125,7 @@ stages:
  
   displayName: 'CAB Ticket Creation'
  
-  dependsOn: Build
+  dependsOn: SecurityValidation
  
   jobs:
  
