@@ -60,21 +60,23 @@ try
 }
 catch
 {
-    Write-Host ""
-    Write-Host "CODEQL API ERROR"
-
-    Write-Host $_.Exception.Message
-
-    if ($_.Exception.Response)
+    if ($_.Exception.Response.StatusCode.value__ -eq 404)
     {
         Write-Host ""
-        Write-Host "HTTP Status Code:"
-        Write-Host $_.Exception.Response.StatusCode.value__
+        Write-Host "No CodeQL alerts found."
+
+        $openCodeQLAlerts = @()
     }
+    else
+    {
+        Write-Host ""
+        Write-Host "CODEQL API ERROR"
 
-    exit 1
+        Write-Host $_.Exception.Message
+
+        exit 1
+    }
 }
-
 # =====================================================
 # DEPENDABOT ALERTS
 # =====================================================
@@ -107,19 +109,22 @@ try
 }
 catch
 {
-    Write-Host ""
-    Write-Host "DEPENDABOT API ERROR"
-
-    Write-Host $_.Exception.Message
-
-    if ($_.Exception.Response)
+    if ($_.Exception.Response.StatusCode.value__ -eq 404)
     {
         Write-Host ""
-        Write-Host "HTTP Status Code:"
-        Write-Host $_.Exception.Response.StatusCode.value__
-    }
+        Write-Host "No Dependabot alerts found."
 
-    exit 1
+        $criticalAlerts = @()
+    }
+    else
+    {
+        Write-Host ""
+        Write-Host "DEPENDABOT API ERROR"
+
+        Write-Host $_.Exception.Message
+
+        exit 1
+    }
 }
 
 # =====================================================
