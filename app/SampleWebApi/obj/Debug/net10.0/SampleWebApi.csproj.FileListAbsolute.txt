@@ -88,7 +88,6 @@ D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.AssemblyInfo.cs
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.csproj.CoreCompileInputs.cache
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.MvcApplicationPartsAssemblyInfo.cs
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.MvcApplicationPartsAssemblyInfo.cache
-D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.sourcelink.json
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\rjimswa.dswa.cache.json
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
@@ -104,3 +103,4 @@ D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\refint\SampleWebApi.dll
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.pdb
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\SampleWebApi.genruntimeconfig.cache
 D:\rel-mgmnt-poc\app\SampleWebApi\obj\Debug\net10.0\ref\SampleWebApi.dll
+D:\rel-mgmnt-poc\app\SampleWebApi\bin\Debug\net10.0\Newtonsoft.Json.dll
