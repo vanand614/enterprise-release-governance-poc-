@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+
 var builder = WebApplication.CreateBuilder(args);
  
 // Add Swagger services
@@ -44,6 +46,43 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.MapGet("/user", async (HttpContext context) =>
+{
+    string? id = context.Request.Query["id"];
+ 
+    string connectionString =
+        "Server=localhost;Database=TestDb;Trusted_Connection=True;";
+ 
+    string query =
+        "SELECT * FROM Users WHERE Id = " + id;
+ 
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+ 
+        using var command =
+            new SqlCommand(query, connection);
+ 
+        await connection.OpenAsync();
+ 
+        using var reader =
+            await command.ExecuteReaderAsync();
+ 
+        while (await reader.ReadAsync())
+        {
+            await context.Response.WriteAsync(
+                reader["Name"].ToString() + "\n");
+        }
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 500;
+ 
+        await context.Response.WriteAsync(
+            "Error: " + ex.Message);
+    }
+});
  
 app.Run();
  
