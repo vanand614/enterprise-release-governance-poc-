@@ -31,32 +31,60 @@ Write-Host "======================================"
 # =====================================================
 # CODEQL ALERTS
 # =====================================================
-
+ 
 $codeqlUri = "https://api.github.com/repos/$repoOwner/$repoName/code-scanning/alerts"
-
+ 
 Write-Host ""
 Write-Host "CodeQL URI:"
 Write-Host $codeqlUri
-
+ 
 try
 {
     Write-Host ""
     Write-Host "Checking CodeQL Alerts..."
-
+ 
     $response = Invoke-WebRequest `
         -Uri $codeqlUri `
         -Headers $headers `
         -Method GET `
         -UseBasicParsing
-
-    $codeqlAlerts = $response.Content | ConvertFrom-Json
-
-    $openCodeQLAlerts = $codeqlAlerts | Where-Object {
-        $_.state -eq "open"
-    }
-
+ 
     Write-Host ""
-    Write-Host "Open CodeQL Alerts: $($openCodeQLAlerts.Count)"
+    Write-Host "HTTP Status:"
+    Write-Host $response.StatusCode
+ 
+    Write-Host ""
+    Write-Host "===== RAW CODEQL RESPONSE ====="
+    Write-Host $response.Content
+    Write-Host "==============================="
+ 
+    $codeqlAlerts = $response.Content | ConvertFrom-Json
+ 
+    Write-Host ""
+    Write-Host "Object Type:"
+    Write-Host $codeqlAlerts.GetType().FullName
+ 
+    foreach ($alert in @($codeqlAlerts))
+    {
+        Write-Host ""
+        Write-Host "Alert State : $($alert.state)"
+ 
+        if ($alert.rule)
+        {
+            Write-Host "Alert Rule  : $($alert.rule.id)"
+        }
+    }
+ 
+    $openCodeQLAlerts = @(
+        $codeqlAlerts | Where-Object {
+            $_.state -eq "open"
+        }
+    )
+ 
+    $openCount = $openCodeQLAlerts.Count
+ 
+    Write-Host ""
+    Write-Host "Open CodeQL Alerts: $openCount"
 }
 catch
 {
@@ -64,16 +92,16 @@ catch
     {
         Write-Host ""
         Write-Host "No CodeQL alerts found."
-
-        $openCodeQLAlerts = @()
+ 
+        $openCount = 0
     }
     else
     {
         Write-Host ""
         Write-Host "CODEQL API ERROR"
-
+ 
         Write-Host $_.Exception.Message
-
+ 
         exit 1
     }
 }
@@ -128,30 +156,40 @@ catch
 }
 
 # =====================================================
+
 # SECURITY GATE
+
 # =====================================================
+ 
+if ($openCount -gt 0)
 
-if ($openCodeQLAlerts.Count -gt 0)
 {
+
     Write-Host ""
+
     Write-Host "======================================"
+
     Write-Host "CODEQL SECURITY FAILURE"
+
     Write-Host "======================================"
-
+ 
     exit 1
-}
 
+}
+ 
 if ($criticalAlerts.Count -gt 0)
+
 {
+
     Write-Host ""
+
     Write-Host "======================================"
+
     Write-Host "DEPENDABOT SECURITY FAILURE"
+
     Write-Host "======================================"
-
+ 
     exit 1
-}
 
-Write-Host ""
-Write-Host "======================================"
-Write-Host "SECURITY VALIDATION PASSED"
-Write-Host "======================================"
+}
+ 
