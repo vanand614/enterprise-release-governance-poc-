@@ -1,12 +1,13 @@
 stages:
   - build
-  - security
+  - test
   - approval
   - deploy
  
 include:
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
  
 build:
   stage: build
@@ -20,6 +21,7 @@ build:
 manual_approval:
   stage: approval
   when: manual
+ 
   script:
     - echo "CAB Approval Granted"
  
@@ -27,4 +29,4 @@ deploy:
   stage: deploy
  
   script:
-    - echo "Deploying application"
+    - echo "Deploying Application"
