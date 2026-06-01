@@ -1,0 +1,30 @@
+stages:
+  - build
+  - security
+  - approval
+  - deploy
+ 
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+ 
+build:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+ 
+  script:
+    - cd app/SampleWebApi
+    - dotnet restore
+    - dotnet build
+ 
+manual_approval:
+  stage: approval
+  when: manual
+  script:
+    - echo "CAB Approval Granted"
+ 
+deploy:
+  stage: deploy
+ 
+  script:
+    - echo "Deploying application"
