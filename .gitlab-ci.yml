@@ -28,7 +28,7 @@ github_security_gate:
     script:
     - pwsh scripts/github-security-check.ps1
 
-allow_failure: false
+    allow_failure: false
 
 manual_approval:
     stage: approval
