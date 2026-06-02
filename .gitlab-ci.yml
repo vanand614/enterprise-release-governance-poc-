@@ -1,46 +1,44 @@
 stages:
 
-* build
-* test
-* security
-* approval
-* deploy
+- build
+- test
+- security
+- approval
+- deploy
 
 include:
 
-* template: Jobs/SAST.gitlab-ci.yml
-* template: Jobs/Dependency-Scanning.gitlab-ci.yml
-* template: Jobs/Secret-Detection.gitlab-ci.yml
+- template: Jobs/SAST.gitlab-ci.yml
+- template: Jobs/Dependency-Scanning.gitlab-ci.yml
+- template: Jobs/Secret-Detection.gitlab-ci.yml
 
 build:
-stage: build
-image: mcr.microsoft.com/dotnet/sdk:8.0
+    stage: build
+    image: mcr.microsoft.com/dotnet/sdk:8.0
 
-script:
-- cd app/SampleWebApi
-- dotnet restore
-- dotnet build
+    script:
+    - cd app/SampleWebApi
+    - dotnet restore
+    - dotnet build
 
 github_security_gate:
-stage: security
+    stage: security
+    image: mcr.microsoft.com/powershell:latest
 
-image: mcr.microsoft.com/powershell:latest
-
-script:
-- pwsh scripts/github-security-check.ps1
+    script:
+    - pwsh scripts/github-security-check.ps1
 
 allow_failure: false
 
 manual_approval:
-stage: approval
+    stage: approval
+    when: manual
 
-when: manual
-
-script:
-- echo "CAB Approval Granted"
+    script:
+    - echo "CAB Approval Granted"
 
 deploy:
-stage: deploy
+    stage: deploy
 
-script:
-- echo "Deploying Application"
+    script:
+    - echo "Deploying Application"
