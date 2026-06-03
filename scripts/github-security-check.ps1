@@ -55,6 +55,8 @@ try
 
     $codeqlAlerts = $response.Content | ConvertFrom-Json
 
+    Write-Host $codeqlAlerts
+
     $openCodeQLAlerts = @(
         $codeqlAlerts | Where-Object {
             $_.state -eq "open"
