@@ -122,6 +122,8 @@ try
     Write-Host ""
     Write-Host "Latest Workflow SHA:"
     Write-Host $latestWorkflowSha
+
+    Write-Host "Open CodeQL Alerts Matching Latest Scan: $openCount"
 }
 catch
 {
