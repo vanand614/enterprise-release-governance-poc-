@@ -128,12 +128,36 @@ try
 
     $dependabotAlerts = $response.Content | ConvertFrom-Json
 
-    $criticalAlerts = $dependabotAlerts | Where-Object {
-        $_.security_advisory.severity -eq "critical"
-    }
+    $highAlerts = @(
+        $dependabotAlerts | Where-Object {
+            $_.security_advisory.severity -eq "high"
+        }
+    )
+
+    $criticalAlerts = @(
+        $dependabotAlerts | Where-Object {
+            $_.security_advisory.severity -eq "critical"
+        }
+    )
+
+    $highOrCriticalAlerts = @(
+        $dependabotAlerts | Where-Object {
+            $_.security_advisory.severity -eq "high" -or
+            $_.security_advisory.severity -eq "critical"
+        }
+    )
+
+    Write-Host ""
+    Write-Host "Open Dependabot Alerts: $($dependabotAlerts.Count)"
+
+    Write-Host ""
+    Write-Host "High Dependabot Alerts: $($highAlerts.Count)"
 
     Write-Host ""
     Write-Host "Critical Dependabot Alerts: $($criticalAlerts.Count)"
+
+    Write-Host ""
+    Write-Host "High/Critical Dependabot Alerts: $($highOrCriticalAlerts.Count)"
 }
 catch
 {
@@ -142,7 +166,9 @@ catch
         Write-Host ""
         Write-Host "No Dependabot alerts found."
 
+        $highAlerts = @()
         $criticalAlerts = @()
+        $highOrCriticalAlerts = @()
     }
     else
     {
@@ -153,44 +179,6 @@ catch
 
         exit 1
     }
-}
-
-# =====================================================
-
-# SECURITY GATE
-
-# =====================================================
- 
-if ($openCount -gt 0)
-
-{
-
-    Write-Host ""
-
-    Write-Host "======================================"
-
-    Write-Host "CODEQL SECURITY FAILURE"
-
-    Write-Host "======================================"
- 
-    exit 1
-
-}
- 
-if ($criticalAlerts.Count -gt 0)
-
-{
-
-    Write-Host ""
-
-    Write-Host "======================================"
-
-    Write-Host "DEPENDABOT SECURITY FAILURE"
-
-    Write-Host "======================================"
- 
-    exit 1
-
 }
 
 # =====================================================
@@ -279,7 +267,7 @@ $html += @"
 
 <br/>
 
-<h2>Dependabot Alerts</h2>
+<h2>Dependabot High/Critical Alerts</h2>
 
 <table>
 
@@ -290,7 +278,7 @@ $html += @"
 
 "@
 
-foreach ($alert in $criticalAlerts)
+foreach ($alert in $highOrCriticalAlerts)
 {
 $html += @"
 
@@ -322,3 +310,45 @@ Write-Host "REPORT GENERATED"
 Write-Host "======================================"
 Write-Host "reports/security-report.html"
 Write-Host ""
+
+# =====================================================
+# SECURITY GATE
+# =====================================================
+
+$securityFailure = $false
+
+if ($openCount -gt 0)
+{
+    Write-Host ""
+    Write-Host "======================================"
+    Write-Host "CODEQL SECURITY FAILURE"
+    Write-Host "======================================"
+
+    $securityFailure = $true
+}
+
+if ($highOrCriticalAlerts.Count -gt 0)
+{
+    Write-Host ""
+    Write-Host "======================================"
+    Write-Host "DEPENDABOT SECURITY FAILURE"
+    Write-Host "======================================"
+
+    $securityFailure = $true
+}
+
+if ($securityFailure)
+{
+    Write-Host ""
+    Write-Host "SECURITY GATE FAILED"
+
+    exit 1
+}
+
+Write-Host ""
+Write-Host "======================================"
+Write-Host "SECURITY VALIDATION PASSED"
+Write-Host "======================================"
+
+exit 0
+
