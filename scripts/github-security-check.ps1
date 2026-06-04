@@ -192,4 +192,133 @@ if ($criticalAlerts.Count -gt 0)
     exit 1
 
 }
- 
+
+# =====================================================
+# REPORT GENERATION
+# =====================================================
+
+New-Item `    -ItemType Directory`
+-Path reports `
+-Force | Out-Null
+
+$html = @"
+
+<html>
+
+<head>
+
+<title>GitHub Security Report</title>
+
+<style>
+
+body {
+    font-family: Arial;
+    margin: 20px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 8px;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>GitHub Security Report</h1>
+
+<p>
+<b>Repository:</b> $repoName
+</p>
+
+<p>
+<b>Generated:</b> $(Get-Date)
+</p>
+
+<h2>CodeQL Alerts</h2>
+
+<table>
+
+<tr>
+<th>Rule</th>
+<th>Severity</th>
+<th>State</th>
+<th>Branch</th>
+</tr>
+
+"@
+
+foreach ($alert in $openCodeQLAlerts)
+{
+$html += @"
+
+<tr>
+<td>$($alert.rule.id)</td>
+<td>$($alert.rule.security_severity_level)</td>
+<td>$($alert.state)</td>
+<td>$($alert.most_recent_instance.ref)</td>
+</tr>
+
+"@
+}
+
+$html += @"
+
+</table>
+
+<br/>
+
+<h2>Dependabot Alerts</h2>
+
+<table>
+
+<tr>
+<th>Severity</th>
+<th>State</th>
+</tr>
+
+"@
+
+foreach ($alert in $criticalAlerts)
+{
+$html += @"
+
+<tr>
+<td>$($alert.security_advisory.severity)</td>
+<td>$($alert.state)</td>
+</tr>
+
+"@
+}
+
+$html += @"
+
+</table>
+
+</body>
+
+</html>
+
+"@
+
+$html |
+Out-File `    -FilePath reports/security-report.html`
+-Encoding UTF8
+
+Write-Host ""
+Write-Host "======================================"
+Write-Host "REPORT GENERATED"
+Write-Host "======================================"
+Write-Host "reports/security-report.html"
+Write-Host ""
