@@ -4,9 +4,9 @@
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$githubToken = $env:githubToken
-$repoOwner   = $env:githubOwner
-$repoName    = $env:githubRepo
+$githubToken = $env:GITHUB_TOKEN
+$repoOwner   = $env:GITHUB_OWNER
+$repoName    = $env:GITHUB_REPO
 
 Write-Host ""
 Write-Host "GitHub Owner: $repoOwner"
