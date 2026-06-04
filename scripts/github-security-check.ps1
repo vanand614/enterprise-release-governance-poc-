@@ -185,9 +185,7 @@ catch
 # REPORT GENERATION
 # =====================================================
 
-New-Item `    -ItemType Directory`
--Path reports `
--Force | Out-Null
+New-Item -ItemType Directory -Path reports -Force | Out-Null
 
 $html = @"
 
@@ -300,9 +298,7 @@ $html += @"
 
 "@
 
-$html |
-Out-File `    -FilePath reports/security-report.html`
--Encoding UTF8
+$html | Out-File -FilePath "reports/security-report.html" -Encoding UTF8
 
 Write-Host ""
 Write-Host "======================================"
