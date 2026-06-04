@@ -29,6 +29,39 @@ Write-Host "GITHUB SECURITY VALIDATION"
 Write-Host "======================================"
 
 # =====================================================
+# LATEST CODEQL WORKFLOW RUN
+# =====================================================
+
+$workflowUri = "https://api.github.com/repos/$repoOwner/$repoName/actions/workflows/codeql.yml/runs?per_page=1"
+
+Write-Host ""
+Write-Host "Latest Workflow URI:"
+Write-Host $workflowUri
+
+try
+{
+    $workflowResponse = Invoke-RestMethod `
+        -Uri $workflowUri `
+        -Headers $headers `
+        -Method GET
+
+    $latestWorkflowRun = $workflowResponse.workflow_runs[0]
+
+    $latestWorkflowSha = $latestWorkflowRun.head_sha
+
+    Write-Host ""
+    Write-Host "Latest Workflow Commit:"
+    Write-Host $latestWorkflowSha
+}
+catch
+{
+    Write-Host ""
+    Write-Host "Unable to retrieve latest workflow run"
+
+    exit 1
+}
+
+# =====================================================
 # CODEQL ALERTS
 # =====================================================
  
@@ -76,15 +109,19 @@ try
     }
  
     $openCodeQLAlerts = @(
-        $codeqlAlerts | Where-Object {
-            $_.state -eq "open"
-        }
+    $codeqlAlerts | Where-Object {
+
+        $_.state -eq "open" -and
+        $_.most_recent_instance.commit_sha -eq $latestWorkflowSha
+
+    }
     )
  
     $openCount = $openCodeQLAlerts.Count
  
     Write-Host ""
-    Write-Host "Open CodeQL Alerts: $openCount"
+    Write-Host "Latest Workflow SHA:"
+    Write-Host $latestWorkflowSha
 }
 catch
 {
@@ -226,6 +263,11 @@ th {
 
 <p>
 <b>Repository:</b> $repoName
+</p>
+
+<p>
+<b>Latest CodeQL Workflow SHA:</b>
+$latestWorkflowSha
 </p>
 
 <p>
