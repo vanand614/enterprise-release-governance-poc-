@@ -32,7 +32,13 @@ Write-Host "======================================"
 # LATEST CODEQL WORKFLOW RUN
 # =====================================================
 
-$workflowUri = "https://api.github.com/repos/$repoOwner/$repoName/actions/workflows/codeql.yml/runs?per_page=1"
+$branchName = $env:CI_COMMIT_REF_NAME
+
+Write-Host ""
+Write-Host "Current Branch:"
+Write-Host $branchName
+
+$workflowUri = "https://api.github.com/repos/$repoOwner/$repoName/actions/workflows/codeql.yml/runs?branch=$branchName&per_page=1"
 
 Write-Host ""
 Write-Host "Latest Workflow URI:"
@@ -48,6 +54,10 @@ try
     $latestWorkflowRun = $workflowResponse.workflow_runs[0]
 
     $latestWorkflowSha = $latestWorkflowRun.head_sha
+
+    Write-Host ""
+    Write-Host "Workflow Branch:"
+    Write-Host $branchName
 
     Write-Host ""
     Write-Host "Latest Workflow Commit:"
@@ -265,6 +275,10 @@ th {
 
 <p>
 <b>Repository:</b> $repoName
+</p>
+
+<p>
+<b>Branch:</b> $branchName
 </p>
 
 <p>
