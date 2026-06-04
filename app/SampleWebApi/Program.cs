@@ -83,6 +83,11 @@ app.MapGet("/user", async (HttpContext context) =>
             "Error: " + ex.Message);
     }
 });
+
+app.MapGet("/file", (string fileName) =>
+{
+    return System.IO.File.ReadAllText(fileName);
+});
  
 app.Run();
  
