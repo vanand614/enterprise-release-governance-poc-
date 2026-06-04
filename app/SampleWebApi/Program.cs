@@ -88,6 +88,13 @@ app.MapGet("/file", (string fileName) =>
 {
     return System.IO.File.ReadAllText(fileName);
 });
+
+app.MapGet("/download", (string fileName) =>
+{
+    var filePath = Path.Combine("uploads", fileName);
+ 
+    return System.IO.File.ReadAllText(filePath);
+});
  
 app.Run();
  
