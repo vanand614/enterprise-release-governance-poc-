@@ -3,6 +3,7 @@ stages:
 - build
 - test
 - security
+- github_pr
 - approval
 - deploy
 
@@ -26,6 +27,7 @@ github_security_gate:
     image: mcr.microsoft.com/powershell:latest
 
     script:
+    - pwsh scripts/wait-for-codeql.ps1
     - pwsh scripts/github-security-check.ps1
 
     artifacts:
@@ -35,6 +37,22 @@ github_security_gate:
             - reports/
 
     allow_failure: false
+
+create_github_pr:
+  stage: github_pr
+
+  image:
+    name: mcr.microsoft.com/powershell:latest
+
+  before_script:
+    - mkdir -p reports
+
+  script:
+    - pwsh scripts/create-github-pr.ps1
+
+  artifacts:
+    paths:
+      - reports/
 
 manual_approval:
     stage: approval
