@@ -358,6 +358,21 @@ $html += @"
 
 $html | Out-File -FilePath "reports/security-report.html" -Encoding UTF8
 
+# Generate JSON report
+ 
+$securityReport = @{
+    Repository = $repoName
+    Branch = $branchName
+    GeneratedDate = (Get-Date)
+    LatestWorkflowSHA = $latestWorkflowSha
+    OpenCodeQLAlerts = $openCodeQLAlerts
+    DependabotHighOrCriticalAlerts = $highOrCriticalAlerts
+}
+ 
+$securityReport |
+ConvertTo-Json -Depth 20 |
+Out-File -FilePath "reports/security-report.json" -Encoding UTF8
+
 Write-Host ""
 Write-Host "======================================"
 Write-Host "REPORT GENERATED"
