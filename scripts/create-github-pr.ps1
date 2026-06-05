@@ -4,7 +4,7 @@ $Headers = @{
 }
 
 $Body = @{
-    title = "Auto PR from GitLab MR"
+    title = "GitLab MR - $env:CI_COMMIT_REF_NAME"
     head  = $env:CI_COMMIT_REF_NAME
     base  = "main"
     body  = "Automatically created from GitLab Merge Request"
@@ -23,8 +23,12 @@ try {
     Write-Host "PR Created:"
     Write-Host $Response.html_url
 
+    New-Item -ItemType Directory -Path reports -Force
+
     $Response.number | Out-File reports/pr-number.txt
 }
 catch {
     Write-Host "PR may already exist"
+
+    Write-Host $_.Exception.Message
 }
