@@ -27,8 +27,9 @@ try {
 
     $Response.number | Out-File reports/pr-number.txt
 }
+
 catch {
-    Write-Host "PR may already exist"
+    Write-Host "Pull Request may already exist"
 
     Write-Host $_.Exception.Message
 }
