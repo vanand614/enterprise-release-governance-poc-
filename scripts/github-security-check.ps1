@@ -389,6 +389,26 @@ Write-Host "reports/security-report.html"
 
 $securityFailure = $false
 
+Write-Host ""
+Write-Host "======================================"
+Write-Host "SECURITY GATE EVALUATION"
+Write-Host "======================================"
+
+Write-Host "Current Branch: $branchName"
+Write-Host "Latest Workflow SHA: $latestWorkflowSha"
+
+Write-Host ""
+Write-Host "CodeQL Alerts Matching Latest Scan: $openCount"
+
+Write-Host ""
+Write-Host "Open Dependabot Alerts: $($dependabotAlerts.Count)"
+
+Write-Host "High/Critical Dependabot Alerts: $($highOrCriticalAlerts.Count)"
+
+# -----------------------------------------------------
+# CODEQL VALIDATION
+# -----------------------------------------------------
+
 if ($openCount -gt 0)
 {
     Write-Host ""
@@ -398,6 +418,15 @@ if ($openCount -gt 0)
 
     $securityFailure = $true
 }
+else
+{
+    Write-Host ""
+    Write-Host "No CodeQL alerts found for current branch"
+}
+
+# -----------------------------------------------------
+# DEPENDABOT VALIDATION
+# -----------------------------------------------------
 
 if ($highOrCriticalAlerts.Count -gt 0)
 {
@@ -406,13 +435,37 @@ if ($highOrCriticalAlerts.Count -gt 0)
     Write-Host "DEPENDABOT SECURITY FAILURE"
     Write-Host "======================================"
 
+    foreach($alert in $highOrCriticalAlerts)
+    {
+        Write-Host ""
+        Write-Host "Package : $($alert.dependency.package.name)"
+        Write-Host "Severity: $($alert.security_advisory.severity)"
+        Write-Host "State   : $($alert.state)"
+
+        if($alert.html_url)
+        {
+            Write-Host "Alert   : $($alert.html_url)"
+        }
+    }
+
     $securityFailure = $true
 }
+else
+{
+    Write-Host ""
+    Write-Host "No High/Critical Dependabot alerts found"
+}
+
+# -----------------------------------------------------
+# FINAL DECISION
+# -----------------------------------------------------
 
 if ($securityFailure)
 {
     Write-Host ""
+    Write-Host "======================================"
     Write-Host "SECURITY GATE FAILED"
+    Write-Host "======================================"
 
     exit 1
 }
@@ -423,4 +476,3 @@ Write-Host "SECURITY VALIDATION PASSED"
 Write-Host "======================================"
 
 exit 0
-
