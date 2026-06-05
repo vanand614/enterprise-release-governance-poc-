@@ -49,6 +49,9 @@ create_github_pr:
 
   script:
     - pwsh scripts/create-github-pr.ps1
+  
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
   artifacts:
     paths:
