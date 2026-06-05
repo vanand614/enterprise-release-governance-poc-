@@ -236,16 +236,12 @@ catch
 
 New-Item -ItemType Directory -Path reports -Force | Out-Null
 
-$html = @"
-
+$HtmlReport = @"
 <html>
-
 <head>
-
 <title>GitHub Security Report</title>
 
 <style>
-
 body {
     font-family: Arial;
     margin: 20px;
@@ -256,15 +252,25 @@ table {
     width: 100%;
 }
 
-th, td {
-    border: 1px solid black;
-    padding: 8px;
-}
-
 th {
-    background-color: #f2f2f2;
+    background-color: #4472C4;
+    color: white;
+    padding: 8px;
+    border: 1px solid black;
 }
 
+td {
+    padding: 8px;
+    border: 1px solid black;
+}
+
+.high {
+    background-color: #FFCCCC;
+}
+
+.critical {
+    background-color: #FF6666;
+}
 </style>
 
 </head>
@@ -273,22 +279,13 @@ th {
 
 <h1>GitHub Security Report</h1>
 
-<p>
-<b>Repository:</b> $repoName
-</p>
+<h2>Summary</h2>
 
-<p>
-<b>Branch:</b> $branchName
-</p>
-
-<p>
-<b>Latest CodeQL Workflow SHA:</b>
-$latestWorkflowSha
-</p>
-
-<p>
-<b>Generated:</b> $(Get-Date)
-</p>
+<ul>
+<li>Open CodeQL Alerts: $OpenCodeQLAlerts</li>
+<li>Open Dependabot Alerts: $OpenDependabotAlerts</li>
+<li>High/Critical Dependabot Alerts: $HighCriticalDependabotAlerts</li>
+</ul>
 
 <h2>CodeQL Alerts</h2>
 
@@ -299,87 +296,93 @@ $latestWorkflowSha
 <th>Severity</th>
 <th>State</th>
 <th>Branch</th>
+<th>Commit SHA</th>
+<th>Message</th>
+<th>File</th>
+<th>Alert URL</th>
 </tr>
-
 "@
 
-foreach ($alert in $openCodeQLAlerts)
+foreach ($Alert in $CodeQLAlerts)
 {
-$html += @"
+    $RuleId = $Alert.rule.id
+    $Severity = $Alert.rule.security_severity_level
+    $State = $Alert.state
 
+    $Branch = $Alert.most_recent_instance.ref
+    $CommitSha = $Alert.most_recent_instance.commit_sha
+
+    $Message = $Alert.most_recent_instance.message.text
+
+    $FilePath = $Alert.most_recent_instance.location.path
+
+    $AlertUrl = $Alert.html_url
+
+    $HtmlReport += @"
 <tr>
-<td>$($alert.rule.id)</td>
-<td>$($alert.rule.security_severity_level)</td>
-<td>$($alert.state)</td>
-<td>$($alert.most_recent_instance.ref)</td>
+<td>$RuleId</td>
+<td>$Severity</td>
+<td>$State</td>
+<td>$Branch</td>
+<td>$CommitSha</td>
+<td>$Message</td>
+<td>$FilePath</td>
+<td><a href='$AlertUrl'>View Alert</a></td>
 </tr>
-
 "@
 }
 
-$html += @"
+$HtmlReport += @"
 
 </table>
 
 <br/>
 
-<h2>Dependabot High/Critical Alerts</h2>
+<h2>Dependabot Alerts</h2>
 
 <table>
 
 <tr>
+<th>Package</th>
 <th>Severity</th>
 <th>State</th>
+<th>Alert URL</th>
 </tr>
-
 "@
 
-foreach ($alert in $highOrCriticalAlerts)
+foreach ($Alert in $DependabotAlerts)
 {
-$html += @"
+    $Package = $Alert.dependency.package.name
+    $Severity = $Alert.security_advisory.severity
+    $State = $Alert.state
+    $AlertUrl = $Alert.html_url
 
+    $HtmlReport += @"
 <tr>
-<td>$($alert.security_advisory.severity)</td>
-<td>$($alert.state)</td>
+<td>$Package</td>
+<td>$Severity</td>
+<td>$State</td>
+<td><a href='$AlertUrl'>View Alert</a></td>
 </tr>
-
 "@
 }
 
-$html += @"
+$HtmlReport += @"
 
 </table>
 
 </body>
-
 </html>
-
 "@
 
-$html | Out-File -FilePath "reports/security-report.html" -Encoding UTF8
+$HtmlReport | Out-File `
+    -FilePath "reports/security-report.html" `
+    -Encoding utf8
 
-# Generate JSON report
- 
-$securityReport = @{
-    Repository = $repoName
-    Branch = $branchName
-    GeneratedDate = (Get-Date)
-    LatestWorkflowSHA = $latestWorkflowSha
-    OpenCodeQLAlerts = $openCodeQLAlerts
-    DependabotHighOrCriticalAlerts = $highOrCriticalAlerts
-}
- 
-$securityReport |
-ConvertTo-Json -Depth 20 |
-Out-File -FilePath "reports/security-report.json" -Encoding UTF8
-
-Write-Host ""
 Write-Host "======================================"
 Write-Host "REPORT GENERATED"
 Write-Host "======================================"
 Write-Host "reports/security-report.html"
-Write-Host ""
-
 # =====================================================
 # SECURITY GATE
 # =====================================================
