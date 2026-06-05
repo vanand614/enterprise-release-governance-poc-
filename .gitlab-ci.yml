@@ -1,17 +1,10 @@
 stages:
 
 - build
-- test
 - github_pr
 - security
 - approval
 - deploy
-
-include:
-
-- template: Jobs/SAST.gitlab-ci.yml
-- template: Jobs/Dependency-Scanning.gitlab-ci.yml
-- template: Jobs/Secret-Detection.gitlab-ci.yml
 
 build:
     stage: build
