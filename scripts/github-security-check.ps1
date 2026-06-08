@@ -166,68 +166,94 @@ Write-Host $dependabotUri
 
 try
 {
+Write-Host ""
+Write-Host "Checking Dependabot Alerts..."
+
+$response = Invoke-WebRequest `
+    -Uri $dependabotUri `
+    -Headers $headers `
+    -Method GET `
+    -UseBasicParsing
+
+$dependabotAlerts = $response.Content | ConvertFrom-Json
+
+Write-Host ""
+Write-Host "===== DEPENDABOT ALERTS ====="
+
+foreach($alert in @($dependabotAlerts))
+{
     Write-Host ""
-    Write-Host "Checking Dependabot Alerts..."
+    Write-Host "Package : $($alert.dependency.package.name)"
+    Write-Host "Severity: $($alert.security_advisory.severity)"
+    Write-Host "State   : $($alert.state)"
+}
 
-    $response = Invoke-WebRequest `
-        -Uri $dependabotUri `
-        -Headers $headers `
-        -Method GET `
-        -UseBasicParsing
+# ONLY OPEN ALERTS
 
-    $dependabotAlerts = $response.Content | ConvertFrom-Json
+$openDependabotAlerts = @(
+    $dependabotAlerts | Where-Object {
+        $_.state -eq "open"
+    }
+)
 
-    $highAlerts = @(
-        $dependabotAlerts | Where-Object {
-            $_.security_advisory.severity -eq "high"
-        }
-    )
+$highAlerts = @(
+    $dependabotAlerts | Where-Object {
+        $_.state -eq "open" -and
+        $_.security_advisory.severity -eq "high"
+    }
+)
 
-    $criticalAlerts = @(
-        $dependabotAlerts | Where-Object {
-            $_.security_advisory.severity -eq "critical"
-        }
-    )
+$criticalAlerts = @(
+    $dependabotAlerts | Where-Object {
+        $_.state -eq "open" -and
+        $_.security_advisory.severity -eq "critical"
+    }
+)
 
-    $highOrCriticalAlerts = @(
-        $dependabotAlerts | Where-Object {
+$highOrCriticalAlerts = @(
+    $dependabotAlerts | Where-Object {
+        $_.state -eq "open" -and (
             $_.security_advisory.severity -eq "high" -or
             $_.security_advisory.severity -eq "critical"
-        }
-    )
+        )
+    }
+)
 
-    Write-Host ""
-    Write-Host "Open Dependabot Alerts: $($dependabotAlerts.Count)"
+Write-Host ""
+Write-Host "Open Dependabot Alerts: $($openDependabotAlerts.Count)"
 
-    Write-Host ""
-    Write-Host "High Dependabot Alerts: $($highAlerts.Count)"
+Write-Host ""
+Write-Host "High Dependabot Alerts: $($highAlerts.Count)"
 
-    Write-Host ""
-    Write-Host "Critical Dependabot Alerts: $($criticalAlerts.Count)"
+Write-Host ""
+Write-Host "Critical Dependabot Alerts: $($criticalAlerts.Count)"
 
-    Write-Host ""
-    Write-Host "High/Critical Dependabot Alerts: $($highOrCriticalAlerts.Count)"
+Write-Host ""
+Write-Host "High/Critical Dependabot Alerts: $($highOrCriticalAlerts.Count)"
+
 }
 catch
 {
-    if ($_.Exception.Response.StatusCode.value__ -eq 404)
-    {
-        Write-Host ""
-        Write-Host "No Dependabot alerts found."
+if ($_.Exception.Response.StatusCode.value__ -eq 404)
+{
+Write-Host ""
+Write-Host "No Dependabot alerts found."
 
-        $highAlerts = @()
-        $criticalAlerts = @()
-        $highOrCriticalAlerts = @()
-    }
-    else
-    {
-        Write-Host ""
-        Write-Host "DEPENDABOT API ERROR"
+    $openDependabotAlerts = @()
+    $highAlerts = @()
+    $criticalAlerts = @()
+    $highOrCriticalAlerts = @()
+}
+else
+{
+    Write-Host ""
+    Write-Host "DEPENDABOT API ERROR"
 
-        Write-Host $_.Exception.Message
+    Write-Host $_.Exception.Message
 
-        exit 1
-    }
+    exit 1
+}
+
 }
 
 # =====================================================
