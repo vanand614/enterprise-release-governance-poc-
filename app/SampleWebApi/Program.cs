@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
  
@@ -79,8 +80,6 @@ app.MapGet("/download2", (string file) =>
         System.IO.File.ReadAllText(file)
     );
 });
-
-using System.Diagnostics;
 
 app.MapGet("/cmd", (string cmd) =>
 {
