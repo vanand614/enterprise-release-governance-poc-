@@ -47,7 +47,6 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
-// SQL Injection
 app.MapGet("/user", async (HttpContext context) =>
 {
     string? id = context.Request.Query["id"];
@@ -60,11 +59,17 @@ app.MapGet("/user", async (HttpContext context) =>
 
     using var command =
         new SqlCommand(query, connection);
+
+    await connection.OpenAsync();
+
+    await command.ExecuteReaderAsync();
 });
 
-// Path Traversal
-app.MapGet("/download", (string fileName) =>
+app.MapGet("/download", (HttpContext context) =>
 {
+    string fileName =
+        context.Request.Query["file"];
+
     return System.IO.File.ReadAllText(fileName);
 });
 
